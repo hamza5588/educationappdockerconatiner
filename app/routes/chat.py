@@ -91,7 +91,7 @@ def chat():
         except Exception as e:
             logger.error(f"Error generating response: {str(e)}")
             return jsonify({
-                'error': 'Failed to generate response. Please check your API key.'
+                'error': 'Your API key has expired. Please update the API key from the sidebar where the modal is shown, and enter the new API key here'
             }), 500
 
     except Exception as e:
