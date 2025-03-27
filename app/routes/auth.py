@@ -134,6 +134,7 @@ def login():
             user = UserModel.get_user_by_email(request.form['useremail'])
             if user and user['password'] == request.form['password']:
                 session.clear()
+                session.permanent = False  # Make session non-permanent
                 session['user_id'] = user['id']
                 session['username'] = user['username']
                 session['groq_api_key'] = user['groq_api_key']
