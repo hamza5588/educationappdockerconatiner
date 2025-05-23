@@ -22,6 +22,7 @@
 
         .sidebar {
             width: 300px;
+            background:rgb(23, 82, 199);
             background: #202123;
             color: #fff;
             padding: 20px;
@@ -1490,7 +1491,7 @@
 
                     <div class="survey-fields" style="margin-top: 20px;">
                         <div class="form-group">
-                            <label for="surveyMessage">Message (Required)</label>
+                            <label for="surveyMessage">Message</label>
                             <textarea id="surveyMessage" class="form-control" rows="3" placeholder="Please share your thoughts about the chat experience..."></textarea>
                         </div>
                     </div>
@@ -2962,7 +2963,7 @@ function initializeSurvey() {
         });
         return;
     }
-
+    
     const ratingMessages = {
         1: "We're sorry to hear that. We'll work on improving.",
         2: "Thanks for the feedback. We'll try to do better.",
@@ -3014,13 +3015,9 @@ function initializeSurvey() {
         }
 
         const message = surveyMessage.value.trim();
-        if (!message) {
-            showNotification('Please provide your feedback', 'error');
-            return;
-        }
-
+       
         try {
-            await submitRating(selectedRating);
+            await submitRating(selectedRating,message);
         } catch (error) {
             console.error('Error submitting rating:', error);
             showNotification('Failed to submit rating. Please try again.', 'error');
@@ -3101,11 +3098,8 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(function() {
         console.log('5 minutes passed, showing survey...');
         showSurvey();
-    }, 5 * 60 * 1000); // 5 minutes in milliseconds
-});
-
-
-
+    }, 5 * 6*  1000); // 5 minutes in milliseconds
+}); 
     </script>
 </body>
 </html>
