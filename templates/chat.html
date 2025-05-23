@@ -2651,12 +2651,12 @@ function checkSurveyStatus() {
         .then(data => {
             hasSubmittedSurvey = data.has_submitted;
             if (!hasSubmittedSurvey) {
-                // Show survey after 5 seconds only if user hasn't submitted
+                // Show survey after 5 minutes only if user hasn't submitted
                 setTimeout(() => {
                     if (!hasSubmittedSurvey) {
                         showSurvey();
                     }
-                }, 5000); // 5 seconds in milliseconds
+                }, 5 * 60 * 1000); // 5 minutes in milliseconds
             }
         })
         .catch(error => {
@@ -2664,7 +2664,83 @@ function checkSurveyStatus() {
         });
 }
 
+// Update the initialization code
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing components...');
+    
+    // Initialize survey
+    initializeSurvey();
+    
+    // Check survey status immediately
+    checkSurveyStatus();
+});
+
+// Update the submitRating function
+async function submitRating(rating, message) {
+    console.log('Submitting rating:', rating); // Debug log
+    
+    try {
+        const response = await fetch('/submit_survey', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                rating: rating,
+                message: message
+            })
+        });
+
+        console.log('Response status:', response.status); // Debug log
+        
+        const data = await response.json();
+        console.log('Response data:', data); // Debug log
+
+        if (data.success) {
+            hasSubmittedSurvey = true;
+            const ratingSuccess = document.querySelector('.rating-success');
+            const ratingMessage = document.querySelector('.rating-message');
+            
+            // Hide message and show success
+            ratingMessage.style.display = 'none';
+            ratingSuccess.style.display = 'flex';
+            
+            // Disable rating buttons and textareas
+            document.querySelectorAll('.rating-btn').forEach(btn => {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'default';
+            });
+            
+            document.getElementById('surveyMessage').disabled = true;
+            document.getElementById('submitSurvey').disabled = true;
+            
+            // Store submission in localStorage
+            localStorage.setItem('surveySubmitted', 'true');
+            
+            // Show success notification
+            showNotification('Thank you for your feedback!', 'success');
+            
+            // Hide modal after delay
+            setTimeout(hideSurvey, 2000);
+        } else {
+            throw new Error(data.error || 'Failed to submit rating');
+        }
+    } catch (error) {
+        console.error('Error in submitRating:', error);
+        showNotification(error.message || 'Failed to submit rating. Please try again.', 'error');
+        throw error;
+    }
+}
+
+// Update the showSurvey function
 function showSurvey() {
+    // Check if survey has already been submitted
+    if (hasSubmittedSurvey || localStorage.getItem('surveySubmitted') === 'true') {
+        console.log('Survey already submitted, not showing again');
+        return;
+    }
+    
     console.log('Showing survey...'); // Debug log
     
     const surveyModal = document.getElementById('surveyModal');
@@ -2681,11 +2757,6 @@ function showSurvey() {
     
     // Add the show class
     surveyModal.classList.add('show');
-    
-    // Log the modal's state
-    console.log('Modal display:', surveyModal.style.display);
-    console.log('Modal classes:', surveyModal.className);
-    console.log('Modal position:', surveyModal.getBoundingClientRect());
 }
 
 function hideSurvey() {
@@ -2775,7 +2846,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            await submitRating(selectedRating);
+            await submitRating(selectedRating, message);
         } catch (error) {
             console.error('Error submitting rating:', error);
             showNotification('Failed to submit rating. Please try again.', 'error');
@@ -2792,66 +2863,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Close survey with close button
     closeSurveyBtn.addEventListener('click', hideSurvey);
 });
-
-async function submitRating(rating) {
-    console.log('Submitting rating:', rating); // Debug log
-    
-    try {
-        const message = document.getElementById('surveyMessage').value.trim();
-        
-        const response = await fetch('/submit_survey', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                rating: rating,
-                message: message
-            })
-        });
-
-        console.log('Response status:', response.status); // Debug log
-        
-        const data = await response.json();
-        console.log('Response data:', data); // Debug log
-
-        if (data.success) {
-            hasSubmittedSurvey = true;
-            const ratingSuccess = document.querySelector('.rating-success');
-            const ratingMessage = document.querySelector('.rating-message');
-            const ratingContainer = document.querySelector('.rating-container');
-            
-            // Hide message and show success
-            ratingMessage.style.display = 'none';
-            ratingSuccess.style.display = 'flex';
-            
-            // Disable rating buttons and textareas
-            document.querySelectorAll('.rating-btn').forEach(btn => {
-                btn.disabled = true;
-                btn.style.opacity = '0.5';
-                btn.style.cursor = 'default';
-            });
-            
-            document.getElementById('surveyMessage').disabled = true;
-            document.getElementById('submitSurvey').disabled = true;
-            
-            // Store submission in localStorage
-            localStorage.setItem('surveySubmitted', 'true');
-            
-            // Show success notification
-            showNotification('Thank you for your feedback!', 'success');
-            
-            // Hide modal after delay
-            setTimeout(hideSurvey, 2000);
-        } else {
-            throw new Error(data.error || 'Failed to submit rating');
-        }
-    } catch (error) {
-        console.error('Error in submitRating:', error);
-        showNotification(error.message || 'Failed to submit rating. Please try again.', 'error');
-        throw error;
-    }
-}
 
 // Add this to the JavaScript section
 function resetChat() {
@@ -3017,7 +3028,7 @@ function initializeSurvey() {
         const message = surveyMessage.value.trim();
        
         try {
-            await submitRating(selectedRating,message);
+            await submitRating(selectedRating, message);
         } catch (error) {
             console.error('Error submitting rating:', error);
             showNotification('Failed to submit rating. Please try again.', 'error');
@@ -3060,46 +3071,6 @@ function testSurvey() {
     console.log('Modal classes:', surveyModal.className);
     console.log('Modal position:', surveyModal.getBoundingClientRect());
 }
-
-// Update the showSurvey function
-function showSurvey() {
-    console.log('Showing survey...'); // Debug log
-    
-    const surveyModal = document.getElementById('surveyModal');
-    if (!surveyModal) {
-        console.error('Survey modal not found');
-        return;
-    }
-    
-    // Make sure the modal is visible
-    surveyModal.style.display = 'block';
-    
-    // Force a reflow
-    surveyModal.offsetHeight;
-    
-    // Add the show class
-    surveyModal.classList.add('show');
-    
-    // Log the modal's state
-    console.log('Modal display:', surveyModal.style.display);
-    console.log('Modal classes:', surveyModal.className);
-    console.log('Modal position:', surveyModal.getBoundingClientRect());
-}
-
-// Update the initialization code
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, initializing components...');
-    
-    // Initialize survey
-    initializeSurvey();
-    
-    // Show survey after 5 minutes
-    console.log('Setting up survey timer for 5 minutes...');
-    setTimeout(function() {
-        console.log('5 minutes passed, showing survey...');
-        showSurvey();
-    }, 5 * 6*  1000); // 5 minutes in milliseconds
-}); 
     </script>
 </body>
 </html>
